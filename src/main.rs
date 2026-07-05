@@ -20,7 +20,7 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
     eframe::run_native(
-        "eframe template",
+        "mosaic knitting chart checker",
         native_options,
         Box::new(|cc| Ok(Box::new(eframe_template::TemplateApp::new(cc)))),
     )

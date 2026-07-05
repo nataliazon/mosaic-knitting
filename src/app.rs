@@ -1,3 +1,5 @@
+use crate::{chart::KnittingChart, scene_modal::ChartScene};
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -7,6 +9,10 @@ pub struct TemplateApp {
 
     #[serde(skip)] // This how you opt-out of serialization of a field
     value: f32,
+
+    chart: KnittingChart,
+    chart_scene: ChartScene,
+    chart_scene_open: bool,
 }
 
 impl Default for TemplateApp {
@@ -15,6 +21,9 @@ impl Default for TemplateApp {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
+            chart_scene: ChartScene::default(),
+            chart_scene_open: true,
+            chart: KnittingChart::default(),
         }
     }
 }
@@ -41,16 +50,9 @@ impl eframe::App for TemplateApp {
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 
-    /// Called each time the UI needs repainting, which may be many times per second.
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
-
         egui::Panel::top("top_panel").show_inside(ui, |ui| {
-            // The top panel is often a good place for a menu bar:
-
             egui::MenuBar::new().ui(ui, |ui| {
-                // NOTE: no File->Quit on web pages!
                 let is_web = cfg!(target_arch = "wasm32");
                 if !is_web {
                     ui.menu_button("File", |ui| {
@@ -60,31 +62,25 @@ impl eframe::App for TemplateApp {
                     });
                     ui.add_space(16.0);
                 }
-
-                egui::widgets::global_theme_preference_buttons(ui);
+                ui.horizontal(|ui| {
+                    egui::widgets::global_theme_preference_buttons(ui);
+                    if ui.button("Open options window").clicked() {
+                        self.chart_scene_open = true;
+                    }
+                });
             });
         });
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
+
+
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("eframe template");
-
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
-            });
-
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                self.value += 1.0;
-            }
-
+            ui.heading("Mosaic Knitting Chart Validator");
             ui.separator();
-
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/main/",
-                "Source code."
-            ));
+            self.chart_scene
+                .show_options(ui, &mut self.chart, &mut self.chart_scene_open);
+            self.chart_scene
+                .show(ui, &mut self.chart, &mut self.chart_scene_open);
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                 powered_by_egui_and_eframe(ui);
@@ -96,6 +92,8 @@ impl eframe::App for TemplateApp {
 
 fn powered_by_egui_and_eframe(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
+        ui.label("Design and implementation: Natalia Zon 2026");
+        ui.label("100% human created - AI was not used at any stage of development.");
         ui.spacing_mut().item_spacing.x = 0.0;
         ui.label("Powered by ");
         ui.hyperlink_to("egui", "https://github.com/emilk/egui");
